@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { TouchableOpacity, View } from 'react-native'
-import { Button, Snackbar, Text, TextInput } from 'react-native-paper'
+import { ActivityIndicator, Button, MD2Colors, Snackbar, Text, TextInput } from 'react-native-paper'
 import { styles } from '../theme/appStyles'
 import { signInWithEmailAndPassword } from 'firebase/auth/cordova';
 import { auth } from '../configs/firebaseConfig';
@@ -23,6 +23,7 @@ interface Message {
 
 
 export const LoginScreen = () => {
+    
 
     //hook usenavigation para la navegacion entre pantalla
     const navigation = useNavigation();
@@ -105,11 +106,11 @@ export const LoginScreen = () => {
                 mode="outlined"
                 label="CONTRASEÑA"
                 placeholder="Ingresa tu contraseña"
-                secureTextEntry
+                secureTextEntry={hiddenPassword}
                 style={styles.inputStyle}
                 onChangeText={(value) => handleInputChange("password", value)}
                 value={formLogin.password}
-                right={<TextInput.Icon icon="eye"/>}
+                right={<TextInput.Icon icon="eye" onPress={()=>sethiddenPassword(!hiddenPassword)} />}
 
             />
             <Button style={styles.button}
