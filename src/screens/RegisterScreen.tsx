@@ -1,125 +1,135 @@
-import React, { useState } from 'react'
-import { Alert, TouchableOpacity, View } from 'react-native'
-import { Button, Snackbar, Text, TextInput } from 'react-native-paper'
-import { styles } from '../theme/appStyles'
+// src/screens/RegisterScreen.tsx
+import React, { useState } from 'react';
+import { View } from 'react-native';
+import {Button,Snackbar,Text,TextInput,} from 'react-native-paper';
+import { styles } from '../theme/appStyles';
 import { auth } from '../configs/firebaseConfig';
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { signInWithEmailAndPassword } from 'firebase/auth/cordova';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
-
-//interface de registrro
 interface FormRegister {
-    email: string;
-    password: string;
-}
-//intwerface apara mensajes dinamicos
-interface Message {
-    visible: boolean;
-    text: string;
-    color: string;
+  email: string;
+  password: string;
 }
 
+interface Message {
+  visible: boolean;
+  text: string;
+  color: string;
+}
 
 export const RegisterScreen = ({ navigation }: any) => {
+  const [formRegister, setFormRegister] = useState<FormRegister>({
+    email: '',
+    password: '',
+  });
+  const [showMessage, setShowMessage] = useState<Message>({
+    visible: false,
+    text: '',
+    color: '',
+  });
 
-    //hooks useState para el formulario
-    const [formRegister, setformRegister] = useState<FormRegister>({
-        email: "",
-        password: ""
-    });
+  const handleInputChange = (key: string, value: string): void => {
+    setFormRegister({ ...formRegister, [key]: value });
+  };
 
-    //hook para el snackbar de mensajes
-    const [showMessage, setshowMessage] = useState<Message>({
-        visible: false,
-        text: "",
-        color: ""
-    });
-
-
-    //metodo para actualizar el estado del formulario
-    const handleInputChange = (key: string, value: string): void => {
-        setformRegister({ ...formRegister, [key]: value });
+  const handleRegister = async () => {
+    if (!formRegister.email || !formRegister.password) {
+      setShowMessage({
+        visible: true,
+        text: 'Completa todos los campos',
+        color: '#ef5350',
+      });
+      return;
     }
 
-    //funcion para registrar usuario
-    const handleRegister = async () => {
-        //validar que los campos no esten vacios
-        if (formRegister.email === "" || formRegister.password === "") {
-            setshowMessage({
-                visible: true,
-                text: "Completar los campos",
-                color: "#b73f3fff"
-            });
-            return;
-
-        }
-        //console.log(formRegister);
-        try {
-            const response = await createUserWithEmailAndPassword(
-                auth,
-                formRegister.email,
-                formRegister.password
-
-            );
-            setshowMessage({
-                visible: true,
-                text: "Registro exitoso",
-                color: "#077538ff",
-            });
-            //limpiar el formulario
-            setformRegister({
-                email: "",
-                password: ""
-            });
-
-        } catch (error) {
-            console.log(error);
-        }
-
+    if (formRegister.password.length < 6) {
+      setShowMessage({
+        visible: true,
+        text: 'La contraseña debe tener al menos 6 caracteres',
+        color: '#ef5350',
+      });
+      return;
     }
 
-    return (
-        <View style={styles.container}>
-            <Text style={styles.text}>REGISTRATE</Text>
-            <TextInput
-                mode="outlined"
-                label="CORREO ELECTRÓNICO"
-                placeholder="Ingresa tu correo"
-                style={styles.inputStyle}
-                onChangeText={(value) => handleInputChange("email", value)}
-                value={formRegister.email}
-            />
-            <TextInput
-                mode="outlined"
-                label="CONTRASEÑA"
-                placeholder="Ingresa tu contraseña"
-                secureTextEntry
-                style={styles.inputStyle}
-                onChangeText={(value) => handleInputChange("password", value)}
-                value={formRegister.password}
+    try {
+      await createUserWithEmailAndPassword(auth, formRegister.email, formRegister.password);
+      setShowMessage({
+        visible: true,
+        text: '¡Registro exitoso! Bienvenido',
+        color: '#4caf50',
+      });
+      setFormRegister({ email: '', password: '' });
+      navigation.navigate('Login');
+    } catch (error: any) {
+      let msg = 'Error al registrarse';
+      if (error.code === 'auth/email-already-in-use') {
+        msg = 'Este correo ya está registrado';
+      } else if (error.code === 'auth/invalid-email') {
+        msg = 'Correo inválido';
+      }
+      setShowMessage({
+        visible: true,
+        text: msg,
+        color: '#ef5350',
+      });
+    }
+  };
 
+  return (
+    <View style={styles.container}>
+      <View style={styles.logoContainer}>
+        <Text style={styles.text}>🎮 Únete al Juego</Text>
+        <Text style={styles.subtitle}>Crea tu cuenta gratis</Text>
+      </View>
 
-            />
-            <Button style={styles.button}
-                icon="login"
-                mode="contained"
-                onPress={handleRegister}>
+      <TextInput
+        mode="outlined"
+        label="Correo electrónico"
+        placeholder="tu@correo.com"
+        value={formRegister.email}
+        onChangeText={(value) => handleInputChange('email', value)}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        left={<TextInput.Icon icon="email" />}
+        style={styles.inputStyle}
+      />
 
-                INICIAR
-            </Button>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={styles.textRedirect}>Si tienes una cuenta, Inicia sesion</Text>
-            </TouchableOpacity>
-            <Snackbar
-                style={{ backgroundColor: showMessage.color }}
-                visible={showMessage.visible}
-                onDismiss={() => setshowMessage({ ...showMessage, visible: false })}
-            >
-                {showMessage.text}
-            </Snackbar>
+      <TextInput
+        mode="outlined"
+        label="Contraseña"
+        placeholder="Mínimo 6 caracteres"
+        value={formRegister.password}
+        onChangeText={(value) => handleInputChange('password', value)}
+        secureTextEntry
+        left={<TextInput.Icon icon="lock" />}
+        style={styles.inputStyle}
+      />
 
-        </View>
+      <Button
+        mode="contained"
+        onPress={handleRegister}
+        style={styles.button}
+        labelStyle={styles.buttonLabel}
+        icon="account-plus"
+      >
+        Registrarse
+      </Button>
 
+      <Text
+        style={styles.textRedirect}
+        onPress={() => navigation.navigate('Login')}
+      >
+        ¿Ya tienes cuenta? Inicia sesión
+      </Text>
 
-    )
-}
+      <Snackbar
+        visible={showMessage.visible}
+        onDismiss={() => setShowMessage({ ...showMessage, visible: false })}
+        style={[styles.snackbar, { backgroundColor: showMessage.color }]}
+        duration={3000}
+      >
+        {showMessage.text}
+      </Snackbar>
+    </View>
+  );
+};

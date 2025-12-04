@@ -1,7 +1,7 @@
 import { createStackNavigator, Header } from '@react-navigation/stack';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
-import { HomeScreen } from '../screens/HomeScreen';
+import {JuegoScreen} from '../screens/JuegoScreen';
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from '@firebase/auth';
 import { auth } from '../configs/firebaseConfig';
@@ -49,7 +49,7 @@ export const StackNavigator = () => {
                                         <Stack.Screen name='Register' options={{ headerShown: false }} component={RegisterScreen} />
                                     </>
                                     :
-                                    <Stack.Screen name='Home' options={{ headerShown: false }} component={HomeScreen} />
+                                    <Stack.Screen name='Juego' options={{ headerShown: false }} component={JuegoScreen} />
                             }
 
 

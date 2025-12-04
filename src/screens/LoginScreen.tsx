@@ -1,140 +1,136 @@
-import React, { useState } from 'react'
-import { TouchableOpacity, View } from 'react-native'
-import { ActivityIndicator, Button, MD2Colors, Snackbar, Text, TextInput } from 'react-native-paper'
-import { styles } from '../theme/appStyles'
-import { signInWithEmailAndPassword } from 'firebase/auth/cordova';
+// src/screens/LoginScreen.tsx
+import React, { useState } from 'react';
+import { View } from 'react-native';
+import {Button,Snackbar,Text,TextInput,useTheme} from 'react-native-paper';
+import { styles } from '../theme/appStyles';
 import { auth } from '../configs/firebaseConfig';
-import { RegisterScreen } from './RegisterScreen';
-import { CommonActions, useNavigation } from '@react-navigation/native';
-//interface de login
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useNavigation } from '@react-navigation/native';
+import { CommonActions } from '@react-navigation/native';
+
 interface FormLogin {
-    email: string;
-    password: string;
+  email: string;
+  password: string;
 }
-//intwerface apara mensajes dinamicos
+
 interface Message {
-    visible: boolean;
-    text: string;
-    color: string;
+  visible: boolean;
+  text: string;
+  color: string;
 }
-
-
-
-
 
 export const LoginScreen = () => {
-    
+  const navigation = useNavigation();
+  const { colors } = useTheme();
+  const [hiddenPassword, setHiddenPassword] = useState<boolean>(true);
+  const [formLogin, setFormLogin] = useState<FormLogin>({
+    email: '',
+    password: '',
+  });
+  const [showMessage, setShowMessage] = useState<Message>({
+    visible: false,
+    text: '',
+    color: '',
+  });
 
-    //hook usenavigation para la navegacion entre pantalla
-    const navigation = useNavigation();
+  const handleInputChange = (key: string, value: string): void => {
+    setFormLogin({ ...formLogin, [key]: value });
+  };
 
-    //hoook useState para el estado de la contraseña
-    const [hiddenPassword, sethiddenPassword] = useState<boolean>(true)
-
-    //hooks useState para el formulario
-    const [formLogin, setfromLogin] = useState<FormLogin>({
-        email: "",
-        password: ""
-    });
-
-    //metodo para actualizar el estado del formulario
-    const handleInputChange = (key: string, value: string): void => {
-        setfromLogin({ ...formLogin, [key]: value });
+  const handleSignIn = async () => {
+    if (!formLogin.email || !formLogin.password) {
+      setShowMessage({
+        visible: true,
+        text: 'Completa todos los campos',
+        color: '#ef5350', // Rojo suave
+      });
+      return;
     }
 
-    //hook para el snackbar de mensajes
-    const [showMessage, setshowMessage] = useState<Message>({
-        visible: false,
-        text: "",
-        color: ""
-    });
-
-    const handleSingIn = async () => {
-        //validar que los campos no esten vacios
-        if (formLogin.email === "" || formLogin.password === "") {
-            setshowMessage({
-                visible: true,
-                text: "Completar los campos",
-                color: "#b73f3fff"
-            });
-            return;
-
-        }
-        //console.log(formRegister);
-        try {
-            const response = await signInWithEmailAndPassword(
-                auth,
-                formLogin.email,
-                formLogin.password
-
-            );
-            setshowMessage({
-                visible: true,
-                text: "Inicio exitoso",
-                color: "#077538ff",
-            });
-            //limpiar el formulario
-            setfromLogin({
-                email: "",
-                password: ""
-            });
-
-        } catch (error) {
-            console.log(error);
-            setshowMessage({
-                visible: true,
-                text: "Correo o contraseña incorrecta",
-                color: "#d3e944ff"
-            });
-        }
-
+    try {
+      await signInWithEmailAndPassword(auth, formLogin.email, formLogin.password);
+      setShowMessage({
+        visible: true,
+        text: '¡Bienvenido! Inicio de sesión exitoso',
+        color: '#4caf50', // Verde
+      });
+      setFormLogin({ email: '', password: '' });
+    } catch (error: any) {
+      let msg = 'Correo o contraseña incorrectos';
+      if (error.code === 'auth/user-not-found') {
+        msg = 'Usuario no registrado';
+      } else if (error.code === 'auth/invalid-credential') {
+        msg = 'Credenciales inválidas';
+      }
+      setShowMessage({
+        visible: true,
+        text: msg,
+        color: '#ef5350',
+      });
     }
+  };
 
-    return (
-        <View style={styles.container}>
-            <Text style={styles.text}>Iniciar Sesion</Text>
-            <TextInput
-                mode="outlined"
-                label="CORREO ELECTRÓNICO"
-                placeholder="Ingresa tu correo"
-                style={styles.inputStyle}
-                onChangeText={(value) => handleInputChange("email", value)}
-                value={formLogin.email}
-                right={<TextInput.Icon icon="email"/>}
-            />
-            <TextInput
-                mode="outlined"
-                label="CONTRASEÑA"
-                placeholder="Ingresa tu contraseña"
-                secureTextEntry={hiddenPassword}
-                style={styles.inputStyle}
-                onChangeText={(value) => handleInputChange("password", value)}
-                value={formLogin.password}
-                right={<TextInput.Icon icon="eye" onPress={()=>sethiddenPassword(!hiddenPassword)} />}
+  return (
+    <View style={styles.container}>
+      <View style={styles.logoContainer}>
+        <Text style={styles.text}>🔢 Adivina el Número</Text>
+        <Text style={styles.subtitle}>Inicia sesión para jugar</Text>
+      </View>
 
-            />
-            <Button style={styles.button}
-                icon="login"
-                mode="contained"
-                onPress={handleSingIn}>
+      <TextInput
+        mode="outlined"
+        label="Correo electrónico"
+        placeholder="ejemplo@correo.com"
+        value={formLogin.email}
+        onChangeText={(value) => handleInputChange('email', value)}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        left={<TextInput.Icon icon="email" />}
+        style={styles.inputStyle}
+      />
 
-                INICIAR
-            </Button>
+      <TextInput
+        mode="outlined"
+        label="Contraseña"
+        placeholder="••••••••"
+        value={formLogin.password}
+        onChangeText={(value) => handleInputChange('password', value)}
+        secureTextEntry={hiddenPassword}
+        left={<TextInput.Icon icon="lock" />}
+        right={
+          <TextInput.Icon
+            icon={hiddenPassword ? 'eye-off' : 'eye'}
+            onPress={() => setHiddenPassword(!hiddenPassword)}
+          />
+        }
+        style={styles.inputStyle}
+      />
 
+      <Button
+        mode="contained"
+        onPress={handleSignIn}
+        style={styles.button}
+        labelStyle={styles.buttonLabel}
+        icon="login"
+      >
+        Iniciar Sesión
+      </Button>
 
-            <Text style={styles.textRedirect}
-                onPress={() => navigation.dispatch(CommonActions.navigate({ name: 'Register' }))}
-            >No tienes una cuenta? Registrate ahora</Text>
+      <Text
+        style={styles.textRedirect}
+        onPress={() => navigation.dispatch(CommonActions.navigate({ name: 'Register' }))}
+      >
+        ¿No tienes cuenta? Regístrate
+      </Text>
 
-
-            <Snackbar
-                style={{ backgroundColor: showMessage.color }}
-                visible={showMessage.visible}
-                onDismiss={() => setshowMessage({ ...showMessage, visible: false })}
-            >
-                {showMessage.text}
-            </Snackbar>
-
-        </View>
-    )
-}
+      <Snackbar
+        visible={showMessage.visible}
+        onDismiss={() => setShowMessage({ ...showMessage, visible: false })}
+        style={[styles.snackbar, { backgroundColor: showMessage.color }]}
+        duration={3000}
+      >
+        {showMessage.text}
+      </Snackbar>
+    </View>
+  );
+};
